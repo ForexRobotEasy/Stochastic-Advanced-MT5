@@ -1,0 +1,79 @@
+
+//+------------------------------------------------------------------+
+//|                                            Stochastic Advanced MT5|
+//|                                      https://forexroboteasy.com    |
+//|                                      Developed by Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+#property copyright 'Forex Robot Easy Team'
+#property link      'https://forexroboteasy.com'
+#property version   '1.00'
+#property description 'Stochastic Advanced MT5'
+
+// Input parameters
+input color ArrowColor = clrGreen; // Color of the arrows
+input ENUM_ARROW_SYMBOL ArrowSymbol = SYMBOL_ARROWUP; // Type of arrow symbol
+input int ArrowSize = 5; // Size of the arrows
+
+// Indicator buffers
+double StochasticBuffer[];
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Set indicator buffers
+   SetIndexBuffer(0, StochasticBuffer, INDICATOR_DATA);
+   
+   // Set indicator parameters
+   SetIndexStyle(0, DRAW_ARROW);
+   SetIndexArrow(0, ArrowSymbol);
+   SetIndexArrowSize(0, ArrowSize);
+   SetIndexShift(0, 0);
+   
+   // Set indicator label
+   SetIndexLabel(0, 'Stochastic Advanced MT5');
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   // Calculate Stochastic
+   int start = prev_calculated - 1;
+   
+   for(int i = start; i < rates_total; i++)
+   {
+      double highMax = High[iHighest(_Symbol, PERIOD_CURRENT, MODE_HIGH, i)];
+      double lowMin = Low[iLowest(_Symbol, PERIOD_CURRENT, MODE_LOW, i)];
+      
+      StochasticBuffer[i] = (close[i] - lowMin) / (highMax - lowMin) * 100;
+   }
+   
+   // Generate trade signals
+   for(int i = prev_calculated; i < rates_total; i++)
+   {
+      // Check for long signal
+      if(StochasticBuffer[i-1] < 20 && StochasticBuffer[i] > 20)
+         DrawArrow(_Symbol, PERIOD_CURRENT, time[i], low[i], ArrowSize, ArrowColor);
+      
+      // Check for short signal
+      if(StochasticBuffer[i-1] > 80 && StochasticBuffer[i] < 80)
+         DrawArrow(_Symbol, PERIOD_CURRENT, time[i], high[i], ArrowSize, ArrowColor);
+   }
+   
+   return(rates_total);
+}
